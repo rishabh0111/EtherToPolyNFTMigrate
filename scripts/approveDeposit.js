@@ -1,39 +1,41 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
-// will compile your contracts, add the Hardhat Runtime Environment's members to the
-// global scope, and execute the script.
-const hre = require("hardhat");
-const fxRootContractABI = require("../fxRootContractABI.json");
-const tokenContractJSON = require("../artifacts/contracts/MetaToken.sol/MetaToken.json");
-
-const tokenAddress = ""; // place your erc20 contract address here
-const tokenABI = tokenContractJSON.abi;
-const fxERC20RootAddress = "0x3658ccFDE5e9629b0805EB06AaCFc42416850961";
-const walletAddress = ""; // place your public address for your wallet here
+const { ethers } = require("hardhat");
+const { FXRootContractAbi } = require("../artifacts/FXRootContractAbi");
+const LandscapeNFTAbi = require("../artifacts/contracts/LandscapeNFT.sol/LandscapeNFT.json");
+require("dotenv").config();
 
 async function main() {
+  const privateKey = process.env.PRIVATE_KEY;
+  const networkAddress = "https://eth-goerli.g.alchemy.com/v2/h-asDNMJ21mVniDAY3XE1VQ9F7PW7A0x";
+  const provider = new ethers.JsonRpcProvider(networkAddress);
+  const signer = new ethers.Wallet(privateKey, provider);
+  const contractAddress = require("../metadata/contractAddress").nftAddress;
 
-    const tokenContract = await hre.ethers.getContractAt(tokenABI, tokenAddress);
-    const fxContract = await hre.ethers.getContractAt(fxRootContractABI, fxERC20RootAddress);
+  const LandscapeNFT = new ethers.Contract(contractAddress, LandscapeNFTAbi, signer);
 
-    const approveTx = await tokenContract.approve(fxERC20RootAddress, 500);
-    await approveTx.wait();
+  const fxRootAddress = "0xF9bc4a80464E48369303196645e876c8C7D972de";
+  const fxRoot = new ethers.Contract(fxRootAddress, FXRootContractAbi, signer);
 
-    console.log('Approval confirmed');
+  const tokenIds = [0, 1, 2, 3, 4];
 
+  const approveTx = await LandscapeNFT.connect(signer).setApprovalForAll(fxRootAddress, true);
+  await approveTx.wait();
+  console.log("Approval confirmed");
 
-    const depositTx = await fxContract.deposit(tokenAddress, walletAddress, 500, "0x6556");
+  for (const tokenId of tokenIds) {
+    const depositTx = await fxRoot.connect(signer).deposit(LandscapeNFT.address, signer.address, tokenId, "0x6566");
     await depositTx.wait();
-
-    console.log("Tokens deposited");
-  
+    console.log(`Deposited tokenId ${tokenId}`);
   }
-  
-  // We recommend this pattern to be able to use async/await everywhere
-  // and properly handle errors.
-  main().catch((error) => {
+
+  console.log("Approved and deposited");
+
+  const balance = await LandscapeNFT.balanceOf(signer.address);
+  console.log("Balance on Mumbai:", balance.toString());
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
     console.error(error);
-    process.exitCode = 1;
+    process.exit(1);
   });

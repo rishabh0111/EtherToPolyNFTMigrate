@@ -6,6 +6,11 @@
   "dependencies": {
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
     "@openzeppelin/contracts": "^4.9.2",
-    "dotenv": "^16.3.1"
+    "chai": "^4.3.7",
+    "dotenv": "^16.3.1",
+    "erc721a": "^4.2.3",
+    "ethers": "^6.7.0",
+    "hardhat-ethers": "^1.0.1",
+    "hardhat-waffle": "^0.0.1-security"
   }
 }
